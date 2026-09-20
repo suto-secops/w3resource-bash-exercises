@@ -55,14 +55,24 @@ cmd_setup() {
 
     local exdir="$repo_root/sandbox/$id"
     if [ ! -s "$exdir/solution.sh" ]; then
-        local title
-        title=$(exercise_text_for "$id" | head -n1 | sed -E 's/^### //')
-        cat >"$exdir/solution.sh" <<EOF
-#!/bin/bash
-# $title
-# Instructions: bin/ex show $id
-
-EOF
+        # The exercise text can contain backticks and $vars (it's markdown
+        # quoting shell syntax) -- build the file with printf, not an
+        # unquoted heredoc, so none of that gets accidentally expanded or
+        # run as command substitution.
+        local commented_text
+        commented_text=$(
+            exercise_text_for "$id" \
+                | sed -E '1s/^### //' \
+                | awk '{ if (length($0) == 0) print "#"; else print "# " $0 }'
+        )
+        {
+            echo '#!/bin/bash'
+            echo '#'
+            printf '%s\n' "$commented_text" | sed -e :a -e '/^#$/{$d;N;ba}'
+            echo '#'
+            echo "# When ready: bin/ex check $id"
+            echo
+        } >"$exdir/solution.sh"
         chmod +x "$exdir/solution.sh"
     fi
 
