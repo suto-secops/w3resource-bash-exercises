@@ -58,10 +58,14 @@ run_solution() {
         return
     fi
 
+    # A student's loop-heavy solution can genuinely hang (an off-by-one
+    # in a `while` condition, a `break` that never fires). 10s is generous
+    # for anything these exercises actually need; a hang shows up as exit
+    # code 124, not a stuck check run.
     if [ -n "$stdin_text" ]; then
-        printf '%s' "$stdin_text" | ./solution.sh "${args[@]}" >"$SOL_STDOUT" 2>"$SOL_STDERR"
+        printf '%s' "$stdin_text" | timeout 10 ./solution.sh "${args[@]}" >"$SOL_STDOUT" 2>"$SOL_STDERR"
     else
-        ./solution.sh "${args[@]}" >"$SOL_STDOUT" 2>"$SOL_STDERR" </dev/null
+        timeout 10 ./solution.sh "${args[@]}" >"$SOL_STDOUT" 2>"$SOL_STDERR" </dev/null
     fi
     echo $? >"$SOL_EXIT"
 }
