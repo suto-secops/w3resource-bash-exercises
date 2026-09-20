@@ -1,0 +1,8 @@
+# Per-exercise scratch space created by bin/setup.sh — your work in
+# progress, not part of the exercise content itself.
+sandbox/*
+!sandbox/README.md
+
+# Editor / OS cruft
+*.swp
+.DS_Store

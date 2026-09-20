@@ -1,0 +1,10 @@
+services:
+  workspace:
+    build: .
+    image: w3resource-bash-exercises:latest
+    container_name: w3resource_bash_exercises
+    working_dir: /home/student/workspace
+    volumes:
+      - .:/home/student/workspace
+    stdin_open: true
+    tty: true
