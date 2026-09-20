@@ -35,6 +35,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         zip \
         unzip \
         wamerican \
+        gcc \
+        libc6-dev \
         sudo \
     && rm -rf /var/lib/apt/lists/* \
     && touch /.exercise-container
