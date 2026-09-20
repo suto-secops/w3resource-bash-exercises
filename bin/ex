@@ -7,6 +7,8 @@
 #   bin/ex setup <id>      (re)create sandbox/<id>/ with a solution.sh stub, then show it
 #   bin/ex check <id>      run the checker
 #   bin/ex list            show every exercise's status: . not started, X fail, check pass
+#   bin/ex reset <id>       wipe + redo one exercise from scratch
+#   bin/ex reset            wipe ALL exercise progress (asks for confirmation)
 set -uo pipefail
 
 if [ ! -f /.exercise-container ]; then
@@ -26,6 +28,8 @@ Usage:
   bin/ex setup <id>       (re)create sandbox/<id>/ with a solution.sh stub, then show it
   bin/ex check <id>       run the checker
   bin/ex list             show every exercise's status
+  bin/ex reset <id>       wipe + redo one exercise from scratch
+  bin/ex reset            wipe ALL exercise progress (asks for confirmation)
 EOF
 }
 
@@ -101,6 +105,30 @@ cmd_next() {
     echo "Every exercise already has a solution.sh started. Run 'bin/ex list' to see what still needs to pass."
 }
 
+cmd_reset() {
+    local id=$1
+    # setup.sh already asks "reset and lose what's inside? [y/N]" when the
+    # dir exists, and (re)creates the solution.sh stub with fresh
+    # instructions -- exactly what "redo this one" means.
+    cmd_setup "$id"
+}
+
+cmd_reset_all() {
+    local sandbox_dir="$repo_root/sandbox"
+    echo "This wipes ALL exercise progress under sandbox/ -- every id, not just one." >&2
+    read -r -p "Type 'yes' to confirm: " reply
+    if [ "$reply" != "yes" ]; then
+        echo "Cancelled."
+        return 1
+    fi
+    # sudo sidesteps any ownership/permission state a permissions
+    # exercise may have left behind (e.g. files chowned away from
+    # student), so this always succeeds regardless of what's in there.
+    find "$sandbox_dir" -mindepth 1 -maxdepth 1 ! -name 'README.md' -print0 \
+        | xargs -0 -r sudo rm -rf --
+    echo "sandbox/ reset. Run 'bin/ex next' to start over."
+}
+
 cmd_list() {
     local id status
     for id in $(all_exercise_ids); do
@@ -139,6 +167,13 @@ case "${1:-}" in
         cmd_check "$2"
         ;;
     list) cmd_list ;;
+    reset)
+        if [ -n "${2:-}" ]; then
+            cmd_reset "$2"
+        else
+            cmd_reset_all
+        fi
+        ;;
     *)
         usage
         exit 2
