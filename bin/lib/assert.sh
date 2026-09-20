@@ -213,6 +213,47 @@ assert_file_equals() {
     fi
 }
 
+# Like assert_file_line_equals but for the file's *entire* content
+# (multi-line ok), against a literal string you already have in hand --
+# no second file needed.
+assert_file_content_equals() {
+    local path=$1 expected=$2 msg=${3:-"'$1' matches the expected content exactly"}
+    local actual
+    actual=$(cat -- "$path" 2>/dev/null)
+    if [ -f "$path" ] && [ "$actual" = "$expected" ]; then
+        _check_pass "$msg"
+    else
+        _check_fail "$msg"
+    fi
+}
+
+assert_not_empty() {
+    local path=$1 msg=${2:-"'$1' is not empty"}
+    if [ -s "$path" ]; then
+        _check_pass "$msg"
+    else
+        _check_fail "$msg"
+    fi
+}
+
+assert_stdout_empty() {
+    local msg=${1:-"stdout is empty"}
+    if [ ! -s "$SOL_STDOUT" ]; then
+        _check_pass "$msg"
+    else
+        _check_fail "$msg"
+    fi
+}
+
+assert_stderr_empty() {
+    local msg=${1:-"stderr is empty"}
+    if [ ! -s "$SOL_STDERR" ]; then
+        _check_pass "$msg"
+    else
+        _check_fail "$msg"
+    fi
+}
+
 # Compares $path against the live stdout of re-running $cmd (a string
 # passed to `bash -c`, evaluated in the exercise directory). Use this when
 # "correct" is most robustly defined as "whatever this command produces
