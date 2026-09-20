@@ -28,6 +28,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         netcat-openbsd \
         iproute2 \
+        net-tools \
+        iputils-ping \
+        dnsutils \
+        hostname \
+        zip \
+        unzip \
+        wamerican \
         sudo \
     && rm -rf /var/lib/apt/lists/* \
     && touch /.exercise-container
