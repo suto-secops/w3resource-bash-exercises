@@ -29,16 +29,34 @@ docker compose up -d
 docker compose exec workspace bash
 ```
 
-Inside the container:
+Inside the container, one command drives the whole loop:
 
 ```bash
-bin/setup.sh c01-01                  # creates sandbox/c01-01/ with whatever it needs
-cd sandbox/c01-01
-nano solution.sh                     # write your script, starting with #!/bin/bash
-chmod +x solution.sh
-cd /home/student/workspace
-bin/check.sh c01-01                  # runs your script and checks its behavior
+bin/ex next
 ```
+
+This sets up the next exercise you haven't started, drops a ready-to-edit
+`solution.sh` stub (already executable, shebang already there) into
+`sandbox/<id>/`, and prints the exercise text right there in your
+terminal — no hunting through `EXERCISES.md` by hand. Edit the file
+(`nano sandbox/<id>/solution.sh`, or open it from your host editor — same
+file, bind-mounted), then:
+
+```bash
+bin/ex check <id>
+```
+
+to grade it. Run `bin/ex next` again for the next one. Two more commands
+round it out:
+
+```bash
+bin/ex show <id>     # reprint any exercise's text, any time
+bin/ex list          # at-a-glance status of every exercise: . not started, ✗ failing, ✓ passing
+```
+
+`bin/ex` is a thin, friendlier wrapper — `bin/setup.sh <id>` and
+`bin/check.sh <id>` underneath are the same two primitives it's built
+from, still there if you want to call them directly.
 
 To leave: `exit`. To stop the container (nothing is lost — your work is
 on disk, in the bind-mounted volume): `docker compose down`.
@@ -56,9 +74,12 @@ categories/
   c02_.../
   ...
 bin/
-  setup.sh                 # prepares sandbox/<id>/
-  check.sh                 # runs solution.sh and grades it
-  lib/assert.sh            # helpers used by checks/*.sh
+  ex                        # the friendly entry point: next / show / setup / check / list
+  setup.sh                  # prepares sandbox/<id>/ (used by bin/ex, or directly)
+  check.sh                  # runs solution.sh and grades it (used by bin/ex, or directly)
+  lib/
+    assert.sh                # helpers used by checks/*.sh
+    paths.sh                 # exercise/category lookup shared by all of the above
 sandbox/                   # your work (gitignored)
 PROGRESS.md                # what's done, what's pending, exercise by exercise
 ```

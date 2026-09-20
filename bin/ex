@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# The friendly entry point -- one command for the whole loop instead of
+# juggling setup.sh/check.sh and hunting through EXERCISES.md by hand.
+#
+#   bin/ex next            set up + show the next exercise you haven't started
+#   bin/ex show <id>       print that exercise's instructions
+#   bin/ex setup <id>      (re)create sandbox/<id>/ with a solution.sh stub, then show it
+#   bin/ex check <id>      run the checker
+#   bin/ex list            show every exercise's status: . not started, X fail, check pass
+set -uo pipefail
+
+if [ ! -f /.exercise-container ]; then
+    echo "This must be run INSIDE the container (docker compose exec workspace bash)." >&2
+    exit 2
+fi
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck disable=SC1091
+source "$repo_root/bin/lib/paths.sh"
+
+usage() {
+    cat >&2 <<'EOF'
+Usage:
+  bin/ex next             set up + show the next exercise you haven't started
+  bin/ex show <id>        print that exercise's instructions
+  bin/ex setup <id>       (re)create sandbox/<id>/ with a solution.sh stub, then show it
+  bin/ex check <id>       run the checker
+  bin/ex list             show every exercise's status
+EOF
+}
+
+cmd_show() {
+    local id=$1
+    local text
+    text=$(exercise_text_for "$id") || {
+        echo "Can't find exercise '$id'." >&2
+        return 1
+    }
+    echo
+    echo "$text"
+    echo
+    echo "Solution file: sandbox/$id/solution.sh"
+    echo "When ready:    bin/ex check $id"
+}
+
+cmd_setup() {
+    local id=$1
+
+    if [ -z "$(category_dir_for "$id")" ]; then
+        echo "Can't find exercise '$id'." >&2
+        return 1
+    fi
+
+    "$repo_root/bin/setup.sh" "$id" || return 1
+
+    local exdir="$repo_root/sandbox/$id"
+    if [ ! -s "$exdir/solution.sh" ]; then
+        local title
+        title=$(exercise_text_for "$id" | head -n1 | sed -E 's/^### //')
+        cat >"$exdir/solution.sh" <<EOF
+#!/bin/bash
+# $title
+# Instructions: bin/ex show $id
+
+EOF
+        chmod +x "$exdir/solution.sh"
+    fi
+
+    cmd_show "$id"
+}
+
+cmd_check() {
+    "$repo_root/bin/check.sh" "$1"
+}
+
+cmd_next() {
+    local id
+    local ids
+    ids=$(all_exercise_ids)
+    if [ -z "$ids" ]; then
+        echo "No exercises found at all -- something's wrong with the repo layout, not with your progress." >&2
+        return 1
+    fi
+    for id in $ids; do
+        if [ ! -f "$repo_root/sandbox/$id/solution.sh" ]; then
+            echo "Next up: $id"
+            cmd_setup "$id"
+            return
+        fi
+    done
+    echo "Every exercise already has a solution.sh started. Run 'bin/ex list' to see what still needs to pass."
+}
+
+cmd_list() {
+    local id status
+    for id in $(all_exercise_ids); do
+        if [ ! -f "$repo_root/sandbox/$id/solution.sh" ]; then
+            status='.'
+        elif "$repo_root/bin/check.sh" "$id" >/dev/null 2>&1; then
+            status=$(printf '\033[32m\xe2\x9c\x93\033[0m')
+        else
+            status=$(printf '\033[31m\xe2\x9c\x97\033[0m')
+        fi
+        printf '  %s  %s\n' "$status" "$id"
+    done
+}
+
+case "${1:-}" in
+    next) cmd_next ;;
+    show)
+        [ -n "${2:-}" ] || {
+            usage
+            exit 2
+        }
+        cmd_show "$2"
+        ;;
+    setup)
+        [ -n "${2:-}" ] || {
+            usage
+            exit 2
+        }
+        cmd_setup "$2"
+        ;;
+    check)
+        [ -n "${2:-}" ] || {
+            usage
+            exit 2
+        }
+        cmd_check "$2"
+        ;;
+    list) cmd_list ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac

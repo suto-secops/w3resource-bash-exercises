@@ -21,12 +21,12 @@ fi
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # shellcheck disable=SC1091
 source "$repo_root/bin/lib/assert.sh"
+# shellcheck disable=SC1091
+source "$repo_root/bin/lib/paths.sh"
 
-cat_id=${id%%-*}
-
-cat_dir=$(find "$repo_root/categories" -maxdepth 1 -mindepth 1 -type d -name "${cat_id}_*" | head -n1)
+cat_dir=$(category_dir_for "$id")
 if [ -z "$cat_dir" ]; then
-    echo "Can't find category '$cat_id'." >&2
+    echo "Can't find exercise '$id'." >&2
     exit 2
 fi
 

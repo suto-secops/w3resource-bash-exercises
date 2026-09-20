@@ -7,16 +7,16 @@ Source: [w3resource: Understanding basic commands](https://www.w3resource.com/ba
 
 ## How each exercise works
 
-1. `bin/setup.sh <id>` — creates `sandbox/<id>/` and seeds it with any
-   starting files that exercise needs.
-2. Write your solution as `sandbox/<id>/solution.sh`, with a `#!/bin/bash`
-   shebang, and make it executable: `chmod +x sandbox/<id>/solution.sh`.
-3. `bin/check.sh <id>` (from the repo root) — runs your script (with
-   whatever fixed stdin/args that exercise specifies) and checks its
-   behavior.
+From the repo root, inside the container (`docker compose exec workspace bash`):
 
-All of this happens **inside the container**
-(`docker compose exec workspace bash`).
+```bash
+bin/ex next             # sets up the next exercise, drops a solution.sh stub, shows the text
+# ... edit sandbox/<id>/solution.sh ...
+bin/ex check <id>       # runs it and grades it
+```
+
+See the top-level [`README.md`](../../README.md) for the full `bin/ex`
+rundown (`show`, `list`, etc.).
 
 ## Exercises
 
